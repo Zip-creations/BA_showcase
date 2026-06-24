@@ -6,5 +6,4 @@ REPORT_PATH="test/out/reportNew.xml"
 
 PYTHONPATH="code" python3 -m pytest "$@" --junit-xml="$REPORT_PATH"
 
-echo "REPORT_PATH=$REPORT_PATH"
 cat "$REPORT_PATH"
