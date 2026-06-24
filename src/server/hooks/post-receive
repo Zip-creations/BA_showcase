@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -u
 
 HOOK_FILE="$(readlink -f "$0")"
 SCRIPT_DIR="$(cd "$(dirname "$HOOK_FILE")" && pwd)"
@@ -20,14 +19,14 @@ while read -r oldrev newrev refname; do
     fi
 
     if [[ ! -x "$BINARY" ]]; then
-        echo "binary not found or not executable: $BINARY"
+        echo "Error: binary not found or not executable: $BINARY"
         exit 1
     fi
 
     output="$(cd "$WORK_DIR" && "$BINARY" -c "$note")"
 
     if [[ -z "$output" ]]; then
-        echo "testAuditor produced no output for $newrev"
+        echo "Error: testAuditor produced no output for $newrev"
         continue
     fi
 
