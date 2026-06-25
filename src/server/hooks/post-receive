@@ -3,8 +3,8 @@
 HOOK_FILE="$(readlink -f "$0")"
 SCRIPT_DIR="$(cd "$(dirname "$HOOK_FILE")" && pwd)"
 
-WORK_DIR="$SCRIPT_DIR/../../code"
-BINARY="$WORK_DIR/testAuditor"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+WORK_DIR="$PROJECT_DIR/code"
 
 INPUT_NOTES_REF="commits"
 OUTPUT_NOTES_REF="testAuditor"
@@ -18,15 +18,13 @@ while read -r oldrev newrev refname; do
         continue
     fi
 
-    if [[ ! -x "$BINARY" ]]; then
-        echo "Error: binary not found or not executable: $BINARY"
-        exit 1
+    if ! output="$(cd "$WORK_DIR" && nix develop "$PROJECT_DIR" --command testAuditor -c "$note")"; then
+        echo "Error: testAuditor failed for $newrev"
+        continue
     fi
 
-    output="$(cd "$WORK_DIR" && "$BINARY" -c "$note")"
-
     if [[ -z "$output" ]]; then
-        echo "Error: testAuditor produced no output for $newrev"
+        echo "testAuditor produced no output for $newrev; no note written"
         continue
     fi
 

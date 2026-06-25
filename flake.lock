@@ -18,7 +18,28 @@
     },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "testAuditor": "testAuditor"
+      }
+    },
+    "testAuditor": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782320471,
+        "narHash": "sha256-9TfGokUEXTvFBPMvU1ogbZi5VG4CzTDlosQ4+XocRxo=",
+        "owner": "Zip-creations",
+        "repo": "testAuditor",
+        "rev": "97691601a5c52290dfc5348318a694a2d628635e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Zip-creations",
+        "repo": "testAuditor",
+        "type": "github"
       }
     }
   },

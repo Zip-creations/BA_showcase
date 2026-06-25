@@ -1,26 +1,39 @@
 {
-  description = "A very basic flake";
+  description = "BA showcase project";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-  };
 
-  outputs = { self, nixpkgs }: 
-    let pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
-    in
-  {
-    packages.x86_64-linux.hello = nixpkgs.legacyPackages.x86_64-linux.hello;
-
-    packages.x86_64-linux.default = self.packages.x86_64-linux.hello;
-
-    devShells.x86_64-linux.default = pkgs.mkShell {
-      buildInputs = [
-        (pkgs.python3.withPackages (ps: [
-          ps.pytest
-          ps.pytest-tap
-          ps.pytest-json-report
-        ]))
-      ];
+    testAuditor = {
+      url = "github:Zip-creations/testAuditor";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
+
+  outputs = { self, nixpkgs, testAuditor }:
+    let
+      system = "x86_64-linux";
+
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+      };
+    in {
+      packages.${system} = {
+        hello = pkgs.hello;
+        default = pkgs.hello;
+      };
+
+      devShells.${system}.default = pkgs.mkShell {
+        buildInputs = [
+          (pkgs.python3.withPackages (ps: [
+            ps.pytest
+            ps.pytest-tap
+            ps.pytest-json-report
+          ]))
+
+          testAuditor.packages.${system}.default
+        ];
+      };
+    };
 }
