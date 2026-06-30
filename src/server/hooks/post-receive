@@ -18,7 +18,7 @@ while read -r oldrev newrev refname; do
         continue
     fi
 
-    if ! output="$(cd "$WORK_DIR" && nix develop "$PROJECT_DIR" --command testAuditor -c "$note")"; then
+    if ! output="$(cd "$WORK_DIR" && printf '%s' "$note" | nix develop "$PROJECT_DIR" --command testAuditor)"; then
         echo "Error: testAuditor failed for $newrev"
         continue
     fi
