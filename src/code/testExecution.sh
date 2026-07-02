@@ -7,7 +7,6 @@ mkdir -p "$(dirname "$REPORT_PATH")"
 mapfile -t tests
 
 echo "testExecution received ${#tests[@]} tests" >&2
-printf 'testExecution test: %s\n' "${tests[@]}" >&2
 
 status=0
 
