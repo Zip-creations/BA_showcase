@@ -18,10 +18,7 @@ test-pick() {
 # run test discovery and forward its output
 ta-from-discovery() {
     local commit="${1:-HEAD}"
-    local discovery_script="./testDiscovery.sh"
-    local discovery
-
-    if ! discovery="$("$discovery_script")"; then
+    if ! discovery="$("./testDiscovery.sh")"; then
         echo "testDiscovery failed" >&2
         return 1
     fi
@@ -31,10 +28,10 @@ ta-from-discovery() {
 # build testAuditorInput XML from testDiscovery and notes
 ta-from-wrapper() {
     local commit="${1:-HEAD}"
-    local input_file
-    input_file="$(mktemp)"
+    local input_file="$(mktemp)"
     trap 'rm -f "$input_file"' RETURN
     {
+        # preamble
         printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>\n' '<testAuditorInput version="1.0">'
         # embed current discovery result
         printf '%s\n' '  <testDiscovery>'
@@ -117,6 +114,7 @@ ta-write-note() {
     git notes --ref="$notes_ref" add -F "$report_file" "$commit"
     echo "wrote testExecution report to refs/notes/$notes_ref for $commit" >&2
     cat "$report_file"
+    printf '\n'
 }
 
 # wrap stdin into CDATA
