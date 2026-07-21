@@ -1,0 +1,8 @@
+{
+    "testDiscoveryPath": {
+        "command": "make",
+        "args": ["discover_gtest"]
+    },
+    "jUnitXMLDirectory": "tests/out/gtest",
+    "outputPath": "tests/out/gtest/audit_gtest.xml"
+}
