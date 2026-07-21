@@ -11,4 +11,4 @@ __pycache__/
 .pytest_cache/
 
 # test output - project specific
-test/out/
+python/src/test/out/
