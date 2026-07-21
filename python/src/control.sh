@@ -102,7 +102,6 @@ ta-write-note() {
 
     trap 'rm -f "$report_file"' RETURN
     cat > "$report_file"
-
     if [[ ! -s "$report_file" ]]; then
         echo "empty report; no note written" >&2
         return 0
@@ -119,9 +118,7 @@ ta-write-note() {
 
 # wrap stdin into CDATA
 emit_cdata() {
-    local content
-    content="$(cat)"
-
+    local content="$(cat)"
     # escape CDATA terminator
     content=${content//]]>/]]]]><![CDATA[>}
     printf '<![CDATA[\n%s\n]]>' "$content"
@@ -130,7 +127,6 @@ emit_cdata() {
 # Show testreports notes for a commit
 show-notes() {
     local commit="${1:-HEAD}"
-
     for ref in $(git for-each-ref --format='%(refname)' refs/notes/testreports); do
         local short_ref="${ref#refs/notes/}"
         local note

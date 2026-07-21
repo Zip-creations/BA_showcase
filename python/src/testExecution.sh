@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-REPORT_PATH="test/out/reportNew.xml"
-mkdir -p "$(dirname "$REPORT_PATH")"
-mapfile -t tests
+RUN_ID="$(date -u +%Y%m%dT%H%M%S)"
+REPORT_PATH="test/out/report-$RUN_ID.xml"
 
+mapfile -t tests
 echo "testExecution received ${#tests[@]} tests" >&2
 status=0
 

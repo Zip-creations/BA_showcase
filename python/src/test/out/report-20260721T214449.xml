@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites name="pytest tests">
+    <testsuite name="pytest" errors="0" failures="0" skipped="1" tests="4" time="0.021"
+        timestamp="2026-07-21T23:44:49.312591+02:00" hostname="LaptopRuben">
+        <testcase classname="test.test_simple" name="test_add_item" time="0.001">
+            <properties>
+                <property name="example_key" value="1" />
+            </properties>
+        </testcase>
+        <testcase classname="test.test_simple" name="test_removing_items" time="0.000" />
+        <testcase classname="test.test_simple" name="test_skipping" time="0.000">
+            <skipped type="pytest.skip"
+                message="this test will be skipped, to see how pytest handles skipped tests in JUnit XML reports">/home/ruben/dev/BA_showcase/python/src/test/test_simple.py:35:
+                this test will be skipped, to see how pytest handles skipped tests in JUnit XML
+                reports</skipped>
+        </testcase>
+        <testcase classname="test.test_simple" name="test_simple_two" time="0.000" />
+    </testsuite>
+</testsuites>
