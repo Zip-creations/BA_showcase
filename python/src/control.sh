@@ -31,19 +31,15 @@ ta-from-discovery() {
 # build testAuditorInput XML from testDiscovery and notes
 ta-from-wrapper() {
     local commit="${1:-HEAD}"
-    local discovery
-    discovery="$(cat)"
     local input_file
     input_file="$(mktemp)"
     trap 'rm -f "$input_file"' RETURN
     {
-        printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>'
-        printf '%s\n' '<testAuditorInput version="1.0">'
+        printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>\n' '<testAuditorInput version="1.0">'
         # embed current discovery result
         printf '%s\n' '  <testDiscovery>'
-        printf '%s' "$discovery" | emit_cdata
-        printf '\n%s\n' '  </testDiscovery>'
-        printf '%s\n' '  <reports>'
+        printf '%s' "$(cat)" | emit_cdata
+        printf '\n%s\n' '  </testDiscovery>\n' '  <reports>'
 
         local note
         # add testDiscovery to XML
@@ -67,9 +63,7 @@ ta-from-wrapper() {
                 fi
             fi
         done < <(git for-each-ref --format='%(refname)' refs/notes/testreports)
-
-        printf '%s\n' '  </reports>'
-        printf '%s\n' '</testAuditorInput>'
+        printf '%s\n' '  </reports>\n' '</testAuditorInput>'
     } > "$input_file"
     cat "$input_file" | ta-from-auditor "$commit"
 }
@@ -85,23 +79,17 @@ ta-from-auditor() {
     fi
 
     echo "testAuditor picked the following tests for execution:" >&2
-    # if [[ -n "$auditor_output" ]]; then
     printf '%s\n' "$auditor_output" >&2
-    # else
-    #     echo "(none)" >&2
-    # fi
-    # keep stdin clean if no tests were selected
     printf '%s' "$auditor_output" | ta-from-execution "$commit"
 }
 
 # run selected tests and forward the produced report
 ta-from-execution() {
     local commit="${1:-HEAD}"
-    local execution_script="./testExecution.sh"
     local execution_output
     local execution_status=0
 
-    execution_output="$("$execution_script")" || execution_status=$?
+    execution_output="$("./testExecution.sh")" || execution_status=$?
     if [[ -z "$execution_output" ]]; then
         echo "testExecution produced no report; no note written" >&2
         return "$execution_status"
@@ -113,11 +101,9 @@ ta-from-execution() {
 # store a report as a new testreports note
 ta-write-note() {
     local commit="${1:-HEAD}"
+    local report_file="$(mktemp)"
 
-    local report_file
-    report_file="$(mktemp)"
     trap 'rm -f "$report_file"' RETURN
-
     cat > "$report_file"
 
     if [[ ! -s "$report_file" ]]; then
@@ -125,9 +111,7 @@ ta-write-note() {
         return 0
     fi
 
-    local run_id
-    run_id="$(date -u +%Y%m%dT%H%M%S)-$$-$RANDOM"
-
+    local run_id="$(date -u +%Y%m%dT%H%M%S)-$$-$RANDOM"
     local notes_ref="testreports/$run_id"
 
     git notes --ref="$notes_ref" add -F "$report_file" "$commit"
