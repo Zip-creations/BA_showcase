@@ -12,13 +12,13 @@ BUILD_DIR = build
 
 # gTest
 GTEST_BIN = $(BUILD_DIR)/gtest_tests
-GTEST_SRC = tests/gtest/gtest.cpp
+GTEST_SRC = tests/gtest/test_simple.cpp tests/gtest/test_identity.cpp
 GTEST_OUT = $(OUT_DIR)/gtest
 GTEST_REPORT_DIR = $(GTEST_OUT)/reports
 
 # Catch2
 CATCH_BIN = $(BUILD_DIR)/catch_tests
-CATCH_SRC = tests/catch2/catch2.cpp
+CATCH_SRC = tests/catch2/test_simple.cpp tests/catch2/test_identity.cpp
 CATCH_OUT = $(OUT_DIR)/catch2
 CATCH_REPORT_DIR = $(CATCH_OUT)/reports
 
