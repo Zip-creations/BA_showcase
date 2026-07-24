@@ -1,171 +1,227 @@
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
+.ONESHELL:
 
 CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++23
 
 AUDITOR_BIN ?= testAuditor
 
+OUT_DIR = tests/out
+BUILD_DIR = build
+
 # gTest
-GTEST_BIN = build/gtest_tests
+GTEST_BIN = $(BUILD_DIR)/gtest_tests
 GTEST_SRC = tests/gtest/gtest.cpp
-GTEST_OUT = tests/out/gtest
+GTEST_OUT = $(OUT_DIR)/gtest
 GTEST_REPORT_DIR = $(GTEST_OUT)/reports
-GTEST_WORK_DIR = $(GTEST_OUT)/work
-GTEST_DISCOVERY = $(GTEST_WORK_DIR)/discovery.xml
-GTEST_AUDITOR_INPUT = $(GTEST_WORK_DIR)/testAuditorInput.xml
-GTEST_SELECTED = $(GTEST_WORK_DIR)/selected-tests.txt
 
 # Catch2
-CATCH_BIN = build/catch_tests
+CATCH_BIN = $(BUILD_DIR)/catch_tests
 CATCH_SRC = tests/catch2/catch2.cpp
-CATCH_OUT = tests/out/catch2
+CATCH_OUT = $(OUT_DIR)/catch2
 CATCH_REPORT_DIR = $(CATCH_OUT)/reports
-CATCH_WORK_DIR = $(CATCH_OUT)/work
-CATCH_DISCOVERY = $(CATCH_WORK_DIR)/discovery.xml
-CATCH_AUDITOR_INPUT = $(CATCH_WORK_DIR)/testAuditorInput.xml
-CATCH_SELECTED = $(CATCH_WORK_DIR)/selected-tests.txt
 
-.PHONY: all test_gtest test_catch discover_gtest discover_catch audit_gtest audit_catch clean check-tools
+.PHONY: all clean check-tools
+.PHONY: test_gtest discover_gtest pick_gtest execute_gtest audit_gtest
+.PHONY: test_catch discover_catch pick_catch execute_catch audit_catch
 
 all: test_gtest test_catch
 
 check-tools:
-	@command -v $(AUDITOR_BIN) >/dev/null 2>&1 || { echo "$(AUDITOR_BIN) not found in PATH" >&2; exit 1; }
+	command -v "$(AUDITOR_BIN)" >/dev/null 2>&1 || {
+		echo "$(AUDITOR_BIN) not found in PATH" >&2
+		exit 1
+	}
 
-# gtest build
 $(GTEST_BIN): $(GTEST_SRC)
-	mkdir -p build
-	$(CXX) $(CXXFLAGS) $(GTEST_SRC) -o $(GTEST_BIN) -lgtest -lgtest_main -pthread
+	mkdir -p "$(BUILD_DIR)"
+	$(CXX) $(CXXFLAGS) "$(GTEST_SRC)" -o "$(GTEST_BIN)" -lgtest -lgtest_main -pthread
+
+$(CATCH_BIN): $(CATCH_SRC)
+	mkdir -p "$(BUILD_DIR)"
+	$(CXX) $(CXXFLAGS) "$(CATCH_SRC)" -o "$(CATCH_BIN)"
 
 test_gtest: $(GTEST_BIN)
-	@mkdir -p $(GTEST_REPORT_DIR)
-	@report="$(GTEST_REPORT_DIR)/full-$$(date -u +%Y%m%dT%H%M%S).xml"; \
-	./$(GTEST_BIN) --gtest_output=xml:"$$report"
-
-# catch2 build
-$(CATCH_BIN): $(CATCH_SRC)
-	mkdir -p build
-	$(CXX) $(CXXFLAGS) $(CATCH_SRC) -o $(CATCH_BIN)
+	mkdir -p "$(GTEST_REPORT_DIR)"
+	report="$(GTEST_REPORT_DIR)/full-$$(date -u +%Y%m%dT%H%M%S).xml"
+	"./$(GTEST_BIN)" --gtest_output=xml:"$$report"
+	cat "$$report"
+	printf '\n'
 
 test_catch: $(CATCH_BIN)
-	@mkdir -p $(CATCH_REPORT_DIR)
-	@report="$(CATCH_REPORT_DIR)/full-$$(date -u +%Y%m%dT%H%M%S).xml"; \
-	./$(CATCH_BIN) -r junit -o "$$report"
+	mkdir -p "$(CATCH_REPORT_DIR)"
+	report="$(CATCH_REPORT_DIR)/full-$$(date -u +%Y%m%dT%H%M%S).xml"
+	"./$(CATCH_BIN)" -r junit -o "$$report"
+	cat "$$report"
+	printf '\n'
 
-$(GTEST_DISCOVERY): $(GTEST_BIN)
-	@mkdir -p $(GTEST_WORK_DIR)
-	@{ \
-		echo '<?xml version="1.0" encoding="utf-8"?>'; \
-		echo '<testsuite>'; \
-		./$(GTEST_BIN) --gtest_list_tests | awk '\
-			/Running main/ { next } \
-			/\.$$/{ suite=$$0; sub(/\.$$/, "", suite); next } \
-			/^[[:space:]]/ { \
-				gsub(/^ +/, "", $$0); \
-				name=$$0; \
-				printf("    <testcase classname=\"%s\" name=\"%s\" qualifiedName=\"%s.%s\"/>\n", suite, name, suite, name); \
-			}'; \
-		echo '</testsuite>'; \
-	} > "$@"
+discover_gtest: $(GTEST_BIN)
+	echo '<?xml version="1.0" encoding="utf-8"?>'
+	echo '<testsuite>'
+	"./$(GTEST_BIN)" --gtest_list_tests | awk '\
+		/Running main/ { next } \
+		/\.$$/{ suite=$$0; sub(/\.$$/, "", suite); next } \
+		/^[[:space:]]/ { \
+			gsub(/^ +/, "", $$0); \
+			name=$$0; \
+			printf("    <testcase classname=\"%s\" name=\"%s\" qualifiedName=\"%s.%s\"/>\n", suite, name, suite, name); \
+		}'
+	echo '</testsuite>'
 
-discover_gtest: $(GTEST_DISCOVERY)
-	@cat "$<"
+discover_catch: $(CATCH_BIN)
+	@echo '<?xml version="1.0" encoding="utf-8"?>'
+	@echo '<testsuite>'
+	@{ "./$(CATCH_BIN)" --list-tests || true; } | awk '\
+		/^All available/ { next } \
+		/^[0-9]+ test case/ { next } \
+		/^[[:space:]]*$$/ { next } \
+		{ \
+			gsub(/^ +/, "", $$0); \
+			name=$$0; \
+			printf("    <testcase classname=\"catch_tests.global\" name=\"%s\" qualifiedName=\"%s\"/>\n", name, name); \
+		}'
+	@echo '</testsuite>'
 
-$(CATCH_DISCOVERY): $(CATCH_BIN)
-	@mkdir -p $(CATCH_WORK_DIR)
-	@{ \
-		echo '<?xml version="1.0" encoding="utf-8"?>'; \
-		echo '<testsuite>'; \
-		./$(CATCH_BIN) --list-tests | awk '\
-			/^All available/ { next } \
-			/^[0-9]+ test case/ { next } \
-			/^[[:space:]]*$$/ { next } \
-			{ \
-				gsub(/^ +/, "", $$0); \
-				name=$$0; \
-				printf("    <testcase classname=\"catch_tests.global\" name=\"%s\" qualifiedName=\"%s\"/>\n", name, name); \
-			}'; \
-		echo '</testsuite>'; \
-	} > "$@"
+# --------------------------------------------------------------------
+# execute explicitly selected tests
+# Usage:
+#   make pick_gtest TESTS="Suite.TestA Suite.TestB"
+#   make pick_catch TESTS="test_a test_b"
+#
+# stdin variants:
+#   printf '%s\n' "Suite.TestA" "Suite.TestB" | make execute_gtest
+#   printf '%s\n' "test_a" "test_b" | make execute_catch
+# --------------------------------------------------------------------
 
-discover_catch: $(CATCH_DISCOVERY)
-	@cat "$<"
+pick_gtest: $(GTEST_BIN)
+	if [[ -z "$${TESTS:-}" ]]; then
+		echo 'Usage: make pick_gtest TESTS="Suite.TestA Suite.TestB"' >&2
+		exit 1
+	fi
+	printf '%s\n' $$TESTS | $(MAKE) execute_gtest
 
-$(GTEST_AUDITOR_INPUT): $(GTEST_DISCOVERY)
-	@mkdir -p $(GTEST_WORK_DIR)
-	@{ \
-		echo '<?xml version="1.0" encoding="utf-8"?>'; \
-		echo '<testAuditorInput version="1.0">'; \
-		echo '  <testDiscovery>'; \
-		echo '<![CDATA['; \
-		sed 's/]]>/]]]]><![CDATA[>/g' "$<"; \
-		echo ']]>'; \
-		echo '  </testDiscovery>'; \
-		echo '  <reports>'; \
-		for report in $(GTEST_REPORT_DIR)/*.xml; do \
-			[[ -f "$$report" ]] || continue; \
-			echo '    <report format="junit-xml">'; \
-			echo '<![CDATA['; \
-			sed 's/]]>/]]]]><![CDATA[>/g' "$$report"; \
-			echo ']]>'; \
-			echo '    </report>'; \
-		done; \
-		echo '  </reports>'; \
-		echo '</testAuditorInput>'; \
-	} > "$@"
+pick_catch: $(CATCH_BIN)
+	if [[ -z "$${TESTS:-}" ]]; then
+		echo 'Usage: make pick_catch TESTS="test_a test_b"' >&2
+		exit 1
+	fi
+	printf '%s\n' $$TESTS | $(MAKE) execute_catch
 
-$(CATCH_AUDITOR_INPUT): $(CATCH_DISCOVERY)
-	@mkdir -p $(CATCH_WORK_DIR)
-	@{ \
-		echo '<?xml version="1.0" encoding="utf-8"?>'; \
-		echo '<testAuditorInput version="1.0">'; \
-		echo '  <testDiscovery>'; \
-		echo '<![CDATA['; \
-		sed 's/]]>/]]]]><![CDATA[>/g' "$<"; \
-		echo ']]>'; \
-		echo '  </testDiscovery>'; \
-		echo '  <reports>'; \
-		for report in $(CATCH_REPORT_DIR)/*.xml; do \
-			[[ -f "$$report" ]] || continue; \
-			echo '    <report format="junit-xml">'; \
-			echo '<![CDATA['; \
-			sed 's/]]>/]]]]><![CDATA[>/g' "$$report"; \
-			echo ']]>'; \
-			echo '    </report>'; \
-		done; \
-		echo '  </reports>'; \
-		echo '</testAuditorInput>'; \
-	} > "$@"
+execute_gtest: $(GTEST_BIN)
+	mapfile -t tests
+	echo "gTest execution received $${#tests[@]} tests" >&2
 
-$(GTEST_SELECTED): $(GTEST_AUDITOR_INPUT) check-tools
-	@$(AUDITOR_BIN) < "$<" > "$@"
+	if [[ "$${#tests[@]}" -eq 0 ]]; then
+		exit 0
+	fi
 
-$(CATCH_SELECTED): $(CATCH_AUDITOR_INPUT) check-tools
-	@$(AUDITOR_BIN) < "$<" > "$@"
+	mkdir -p "$(GTEST_REPORT_DIR)"
+	report="$(GTEST_REPORT_DIR)/pick-$$(date -u +%Y%m%dT%H%M%S).xml"
+	filter="$$(printf '%s\n' "$${tests[@]}" | paste -sd:)"
 
-audit_gtest: $(GTEST_SELECTED) $(GTEST_BIN)
-	@if [[ ! -s "$(GTEST_SELECTED)" ]]; then \
-		echo "testAuditor selected no gtest tests"; \
-		exit 0; \
-	fi; \
-	mkdir -p $(GTEST_REPORT_DIR); \
-	report="$(GTEST_REPORT_DIR)/audit-$$(date -u +%Y%m%dT%H%M%S).xml"; \
-	filter="$$(paste -sd: "$(GTEST_SELECTED)")"; \
-	echo "running gtest filter: $$filter"; \
-	./$(GTEST_BIN) --gtest_filter="$$filter" --gtest_output=xml:"$$report"
+	"./$(GTEST_BIN)" \
+		--gtest_filter="$$filter" \
+		--gtest_output=xml:"$$report" >&2
 
-audit_catch: $(CATCH_SELECTED) $(CATCH_BIN)
-	@if [[ ! -s "$(CATCH_SELECTED)" ]]; then \
-		echo "testAuditor selected no catch2 tests"; \
-		exit 0; \
-	fi; \
-	mkdir -p $(CATCH_REPORT_DIR); \
-	report="$(CATCH_REPORT_DIR)/audit-$$(date -u +%Y%m%dT%H%M%S).xml"; \
-	mapfile -t tests < "$(CATCH_SELECTED)"; \
-	echo "running catch2 tests:"; \
-	printf '%s\n' "$${tests[@]}"; \
-	./$(CATCH_BIN) "$${tests[@]}" -r junit -o "$$report"
+	cat "$$report"
+	printf '\n'
+
+execute_catch: $(CATCH_BIN)
+	mapfile -t tests
+	echo "Catch2 execution received $${#tests[@]} tests" >&2
+
+	if [[ "$${#tests[@]}" -eq 0 ]]; then
+		exit 0
+	fi
+
+	mkdir -p "$(CATCH_REPORT_DIR)"
+	report="$(CATCH_REPORT_DIR)/pick-$$(date -u +%Y%m%dT%H%M%S).xml"
+
+	"./$(CATCH_BIN)" "$${tests[@]}" -r junit -o "$$report" >&2
+	cat "$$report"
+	printf '\n'
+
+audit_gtest: $(GTEST_BIN) check-tools
+	tmp_dir="$$(mktemp -d)"
+	trap 'rm -rf "$$tmp_dir"' EXIT
+
+	discovery="$$tmp_dir/discovery.xml"
+	input="$$tmp_dir/testAuditorInput.xml"
+	selected="$$tmp_dir/selected-tests.txt"
+
+	$(MAKE) discover_gtest > "$$discovery"
+	$(MAKE) auditor_input DISCOVERY="$$discovery" REPORT_DIR="$(GTEST_REPORT_DIR)" > "$$input"
+
+	"$(AUDITOR_BIN)" < "$$input" > "$$selected"
+
+	echo "testAuditor selected gTest tests:" >&2
+	if [[ -s "$$selected" ]]; then
+		cat "$$selected" >&2
+	else
+		echo "(none)" >&2
+	fi
+
+	cat "$$selected" | $(MAKE) execute_gtest
+
+audit_catch: $(CATCH_BIN) check-tools
+	tmp_dir="$$(mktemp -d)"
+	trap 'rm -rf "$$tmp_dir"' EXIT
+
+	discovery="$$tmp_dir/discovery.xml"
+	input="$$tmp_dir/testAuditorInput.xml"
+	selected="$$tmp_dir/selected-tests.txt"
+
+	$(MAKE) discover_catch > "$$discovery"
+	$(MAKE) auditor_input DISCOVERY="$$discovery" REPORT_DIR="$(CATCH_REPORT_DIR)" > "$$input"
+
+	"$(AUDITOR_BIN)" < "$$input" > "$$selected"
+
+	echo "testAuditor selected Catch2 tests:" >&2
+	if [[ -s "$$selected" ]]; then
+		cat "$$selected" >&2
+	else
+		echo "(none)" >&2
+	fi
+
+	cat "$$selected" | $(MAKE) execute_catch
+
+# --------------------------------------------------------------------
+# internal helper target
+# Builds testAuditorInput XML from:
+#   DISCOVERY=<path>
+#   REPORT_DIR=<directory with JUnit XML reports>
+# --------------------------------------------------------------------
+
+auditor_input:
+	if [[ -z "$${DISCOVERY:-}" || -z "$${REPORT_DIR:-}" ]]; then
+		echo 'Usage: make auditor_input DISCOVERY=... REPORT_DIR=...' >&2
+		exit 1
+	fi
+
+	echo '<?xml version="1.0" encoding="utf-8"?>'
+	echo '<testAuditorInput version="1.0">'
+
+	echo '  <testDiscovery>'
+	echo '<![CDATA['
+	sed 's/]]>/]]]]><![CDATA[>/g' "$$DISCOVERY"
+	echo ']]>'
+	echo '  </testDiscovery>'
+
+	echo '  <reports>'
+	if [[ -d "$$REPORT_DIR" ]]; then
+		for report in "$$REPORT_DIR"/*.xml; do
+			[[ -f "$$report" ]] || continue
+
+			echo '    <report format="junit-xml">'
+			echo '<![CDATA['
+			sed 's/]]>/]]]]><![CDATA[>/g' "$$report"
+			echo ']]>'
+			echo '    </report>'
+		done
+	fi
+	echo '  </reports>'
+	echo '</testAuditorInput>'
 
 clean:
-	rm -rf build tests/out
+	rm -rf "$(BUILD_DIR)" "$(OUT_DIR)"

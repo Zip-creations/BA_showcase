@@ -1,3 +1,4 @@
+# direnv
 .direnv/
 
 #vs code
@@ -9,6 +10,7 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-
-# test output - project specific
 python/src/test/out/
+
+# cpp
+build/
