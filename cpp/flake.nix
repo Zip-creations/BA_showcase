@@ -3,9 +3,14 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+
+    testAuditor = {
+      url = "github:Zip-creations/testAuditor";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs }: 
+  outputs = { self, nixpkgs, testAuditor}: 
     let pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
     in
   {
