@@ -3,12 +3,13 @@ SHELL := bash
 .ONESHELL:
 
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++23
+CXXFLAGS = -Wall -Wextra -std=c++23 -Iclasses
 
 AUDITOR_BIN ?= testAuditor
 
 OUT_DIR = tests/out
 BUILD_DIR = build
+TODO_SRC = classes/ToDoList.cpp
 
 # gTest
 GTEST_BIN = $(BUILD_DIR)/gtest_tests
@@ -34,13 +35,13 @@ check-tools:
 		exit 1
 	}
 
-$(GTEST_BIN): $(GTEST_SRC)
+$(GTEST_BIN): $(GTEST_SRC) $(TODO_SRC)
 	mkdir -p "$(BUILD_DIR)"
-	$(CXX) $(CXXFLAGS) "$(GTEST_SRC)" -o "$(GTEST_BIN)" -lgtest -lgtest_main -pthread
+	$(CXX) $(CXXFLAGS) $(GTEST_SRC) $(TODO_SRC) -o "$(GTEST_BIN)" -lgtest -lgtest_main -pthread
 
-$(CATCH_BIN): $(CATCH_SRC)
+$(CATCH_BIN): $(CATCH_SRC) $(TODO_SRC)
 	mkdir -p "$(BUILD_DIR)"
-	$(CXX) $(CXXFLAGS) "$(CATCH_SRC)" -o "$(CATCH_BIN)"
+	$(CXX) $(CXXFLAGS) $(CATCH_SRC) $(TODO_SRC) -o "$(CATCH_BIN)"
 
 test_gtest: $(GTEST_BIN)
 	mkdir -p "$(GTEST_REPORT_DIR)"

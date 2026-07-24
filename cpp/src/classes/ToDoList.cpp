@@ -1,27 +1,18 @@
-#include <map>
-#include <string>
+#include "ToDoList.hpp"
 
-class ToDoItem {
-public:
-    std::string content;
-    ToDoItem(const std::string& content) {
-        this->content = content;
-    };
-};
+ToDoItem::ToDoItem(const std::string& content)
+    : content(content) {
+}
 
-class ToDoList {
-private:
-    std::map<int, ToDoItem> items;
-    int nextID = 0;
-public:
-    void addItem(const ToDoItem& item){
-        items.emplace(nextID, item);
-        nextID++;
-    };
-    void removeItemByID(int id) {
-        items.erase(id);
-    };
-    ToDoItem getItemByID(int id) const {
-        return items.at(id);
-    };
-};
+void ToDoList::addItem(const ToDoItem& item) {
+    items.emplace(nextID, item);
+    nextID++;
+}
+
+void ToDoList::removeItemByID(int id) {
+    items.erase(id);
+}
+
+ToDoItem ToDoList::getItemByID(int id) const {
+    return items.at(id);
+}
