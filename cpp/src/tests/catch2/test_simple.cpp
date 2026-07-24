@@ -1,7 +1,7 @@
 #define CATCH_CONFIG_MAIN
-#include "ToDoList.hpp"
 
-#include <catch2/catch_test_macros.hpp>
+#include "ToDoList.hpp"
+#include <catch2/catch.hpp>
 #include <stdexcept>
 #include <string>
 

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="1" failures="0" disabled="0" errors="0" time="0." timestamp="2026-05-18T17:03:06.058" name="AllTests">
-  <testsuite name="MathTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-05-18T17:03:06.059">
-    <testcase name="Addition" file="tests/googletest/googletest.cpp" line="3" status="run" result="completed" time="0." timestamp="2026-05-18T17:03:06.059" classname="MathTest" />
-  </testsuite>
-</testsuites>

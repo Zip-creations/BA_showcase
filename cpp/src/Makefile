@@ -6,7 +6,6 @@ CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++23 -Iclasses
 
 AUDITOR_BIN ?= testAuditor
-
 OUT_DIR = tests/out
 BUILD_DIR = build
 TODO_SRC = classes/ToDoList.cpp
