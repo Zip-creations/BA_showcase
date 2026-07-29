@@ -35,7 +35,7 @@ TEST(TestSimple, test_removing_items) {
 }
 
 TEST(TestSimple, test_skipping) {
-    ASSERT_TRUE(true);
+    GTEST_SKIP() << "this test will be skipped, to see how gtest handles skipped tests in JUnit XML reports";
 }
 
 TEST(TestSimple, test_simple) {
