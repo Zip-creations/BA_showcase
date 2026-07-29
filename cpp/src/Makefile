@@ -22,9 +22,12 @@ CATCH_SRC = test/catch2/test_simple.cpp test/catch2/test_identity.cpp
 CATCH_OUT = $(OUT_DIR)/catch2
 CATCH_REPORT_DIR = $(CATCH_OUT)
 
+GTEST_ARCHIVE_DIR = $(GTEST_REPORT_DIR)
+CATCH_ARCHIVE_DIR = $(CATCH_REPORT_DIR)
+
 .PHONY: all clean check-tools
-.PHONY: test_gtest discover_gtest pick_gtest execute_gtest audit_gtest
-.PHONY: test_catch discover_catch pick_catch execute_catch audit_catch
+.PHONY: test_gtest discover_gtest pick_gtest execute_gtest test_all_gtest
+.PHONY: test_catch discover_catch pick_catch execute_catch test_all_catch
 .PHONY: auditor_input
 
 all: test_gtest test_catch
@@ -155,7 +158,7 @@ execute_catch: $(CATCH_BIN)
 	cat "$$report"
 	printf '\n'
 
-audit_gtest: $(GTEST_BIN) check-tools
+test_all_gtest: $(GTEST_BIN) check-tools
 	@tmp_dir="$$(mktemp -d)"
 	trap 'rm -rf "$$tmp_dir"' EXIT
 
@@ -164,7 +167,7 @@ audit_gtest: $(GTEST_BIN) check-tools
 	selected="$$tmp_dir/selected-tests.txt"
 
 	$(MAKE) --no-print-directory discover_gtest > "$$discovery"
-	$(MAKE) --no-print-directory auditor_input DISCOVERY="$$discovery" REPORT_DIR="$(GTEST_REPORT_DIR)" > "$$input"
+	$(MAKE) --no-print-directory auditor_input DISCOVERY="$$discovery" REPORT_DIR="$(GTEST_ARCHIVE_DIR)" > "$$input"
 
 	"$(AUDITOR_BIN)" < "$$input" > "$$selected"
 
@@ -177,7 +180,7 @@ audit_gtest: $(GTEST_BIN) check-tools
 
 	cat "$$selected" | $(MAKE) --no-print-directory execute_gtest
 
-audit_catch: $(CATCH_BIN) check-tools
+test_all_catch: $(CATCH_BIN) check-tools
 	@tmp_dir="$$(mktemp -d)"
 	trap 'rm -rf "$$tmp_dir"' EXIT
 
@@ -186,7 +189,7 @@ audit_catch: $(CATCH_BIN) check-tools
 	selected="$$tmp_dir/selected-tests.txt"
 
 	$(MAKE) --no-print-directory discover_catch > "$$discovery"
-	$(MAKE) --no-print-directory auditor_input DISCOVERY="$$discovery" REPORT_DIR="$(CATCH_REPORT_DIR)" > "$$input"
+	$(MAKE) --no-print-directory auditor_input DISCOVERY="$$discovery" REPORT_DIR="$(CATCH_ARCHIVE_DIR)" > "$$input"
 
 	"$(AUDITOR_BIN)" < "$$input" > "$$selected"
 

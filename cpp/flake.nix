@@ -10,8 +10,10 @@
     };
   };
 
-  outputs = { self, nixpkgs, testAuditor}: 
+  outputs = { self, nixpkgs, testAuditor }: 
     let pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
+      system = "x86_64-linux";
+
     in
   {
     packages.x86_64-linux.hello = nixpkgs.legacyPackages.x86_64-linux.hello;
@@ -24,7 +26,9 @@
         pkgs.gnumake
         pkgs.gtest
         pkgs.catch2_3
+        testAuditor.packages.${system}.default
       ];
+
     };
   };
 }
