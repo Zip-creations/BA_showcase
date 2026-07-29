@@ -1,7 +1,6 @@
-#define CATCH_CONFIG_MAIN
-
 #include "ToDoList.hpp"
-#include <catch2/catch.hpp>
+
+#include <catch2/catch_test_macros.hpp>
 #include <stdexcept>
 #include <string>
 
@@ -37,7 +36,7 @@ TEST_CASE("test_removing_items") {
 }
 
 TEST_CASE("test_skipping") {
-    REQUIRE(true);
+    SKIP("this test will be skipped, to see how catch2 handles skipped tests in JUnit XML reports");
 }
 
 TEST_CASE("test_simple") {

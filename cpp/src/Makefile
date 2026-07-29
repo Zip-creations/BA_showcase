@@ -25,41 +25,46 @@ CATCH_REPORT_DIR = $(CATCH_OUT)
 .PHONY: all clean check-tools
 .PHONY: test_gtest discover_gtest pick_gtest execute_gtest audit_gtest
 .PHONY: test_catch discover_catch pick_catch execute_catch audit_catch
+.PHONY: auditor_input
 
 all: test_gtest test_catch
 
 check-tools:
-	command -v "$(AUDITOR_BIN)" >/dev/null 2>&1 || {
+	@command -v "$(AUDITOR_BIN)" >/dev/null 2>&1 || {
 		echo "$(AUDITOR_BIN) not found in PATH" >&2
 		exit 1
 	}
 
 $(GTEST_BIN): $(GTEST_SRC) $(TODO_SRC)
-	mkdir -p "$(BUILD_DIR)"
+	@mkdir -p "$(BUILD_DIR)"
 	$(CXX) $(CXXFLAGS) $(GTEST_SRC) $(TODO_SRC) -o "$(GTEST_BIN)" -lgtest -lgtest_main -pthread
 
 $(CATCH_BIN): $(CATCH_SRC) $(TODO_SRC)
-	mkdir -p "$(BUILD_DIR)"
-	$(CXX) $(CXXFLAGS) $(CATCH_SRC) $(TODO_SRC) -o "$(CATCH_BIN)"
+	@mkdir -p "$(BUILD_DIR)"
+	$(CXX) $(CXXFLAGS) $(CATCH_SRC) $(TODO_SRC) -o "$(CATCH_BIN)" -lCatch2Main -lCatch2
 
 test_gtest: $(GTEST_BIN)
-	mkdir -p "$(GTEST_REPORT_DIR)"
+	@mkdir -p "$(GTEST_REPORT_DIR)"
 	report="$(GTEST_REPORT_DIR)/full-$$(date -u +%Y%m%dT%H%M%S).xml"
-	"./$(GTEST_BIN)" --gtest_output=xml:"$$report"
+
+	"./$(GTEST_BIN)" --gtest_output=xml:"$$report" >&2
+
 	cat "$$report"
 	printf '\n'
 
 test_catch: $(CATCH_BIN)
-	mkdir -p "$(CATCH_REPORT_DIR)"
+	@mkdir -p "$(CATCH_REPORT_DIR)"
 	report="$(CATCH_REPORT_DIR)/full-$$(date -u +%Y%m%dT%H%M%S).xml"
-	"./$(CATCH_BIN)" -r junit -o "$$report"
+
+	"./$(CATCH_BIN)" -r junit -o "$$report" >&2
+
 	cat "$$report"
 	printf '\n'
 
 discover_gtest: $(GTEST_BIN)
 	@echo '<?xml version="1.0" encoding="utf-8"?>'
-	@echo '<testsuite>'
-	@"./$(GTEST_BIN)" --gtest_list_tests | awk '\
+	echo '<testsuite>'
+	"./$(GTEST_BIN)" --gtest_list_tests | awk '\
 		/Running main/ { next } \
 		/\.$$/ { suite=$$0; sub(/\.$$/, "", suite); next } \
 		/^[[:space:]]/ { \
@@ -67,12 +72,12 @@ discover_gtest: $(GTEST_BIN)
 			name=$$0; \
 			printf("    <testcase classname=\"%s\" name=\"%s\" qualifiedName=\"%s.%s\"/>\n", suite, name, suite, name); \
 		}'
-	@echo '</testsuite>'
+	echo '</testsuite>'
 
 discover_catch: $(CATCH_BIN)
 	@echo '<?xml version="1.0" encoding="utf-8"?>'
-	@echo '<testsuite>'
-	@{ "./$(CATCH_BIN)" --list-tests || true; } | awk '\
+	echo '<testsuite>'
+	{ "./$(CATCH_BIN)" --list-tests || true; } | awk '\
 		/^All available/ { next } \
 		/^[0-9]+ test case/ { next } \
 		/^[[:space:]]*$$/ { next } \
@@ -81,13 +86,14 @@ discover_catch: $(CATCH_BIN)
 			name=$$0; \
 			printf("    <testcase classname=\"catch_tests.global\" name=\"%s\" qualifiedName=\"%s\"/>\n", name, name); \
 		}'
-	@echo '</testsuite>'
+	echo '</testsuite>'
 
 # --------------------------------------------------------------------
 # execute explicitly selected tests
+#
 # Usage:
 #   make pick_gtest TESTS="Suite.TestA Suite.TestB"
-#   make pick_catch TESTS="test_a test_b"
+#   make pick_catch TEST="test_name"
 #
 # stdin variants:
 #   printf '%s\n' "Suite.TestA" "Suite.TestB" | make execute_gtest
@@ -95,21 +101,23 @@ discover_catch: $(CATCH_BIN)
 # --------------------------------------------------------------------
 
 pick_gtest: $(GTEST_BIN)
-	if [[ -z "$${TESTS:-}" ]]; then
+	@if [[ -z "$${TESTS:-}" ]]; then
 		echo 'Usage: make pick_gtest TESTS="Suite.TestA Suite.TestB"' >&2
 		exit 1
 	fi
-	printf '%s\n' $$TESTS | $(MAKE) execute_gtest
+
+	printf '%s\n' $$TESTS | $(MAKE) --no-print-directory execute_gtest
 
 pick_catch: $(CATCH_BIN)
-	if [[ -z "$${TESTS:-}" ]]; then
-		echo 'Usage: make pick_catch TESTS="test_a test_b"' >&2
+	@if [[ -z "$${TEST:-}" ]]; then
+		echo 'Usage: make pick_catch TEST="test_name"' >&2
 		exit 1
 	fi
-	printf '%s\n' $$TESTS | $(MAKE) execute_catch
+
+	printf '%s\n' "$$TEST" | $(MAKE) --no-print-directory execute_catch
 
 execute_gtest: $(GTEST_BIN)
-	mapfile -t tests
+	@mapfile -t tests
 	echo "gTest execution received $${#tests[@]} tests" >&2
 
 	if [[ "$${#tests[@]}" -eq 0 ]]; then
@@ -128,7 +136,7 @@ execute_gtest: $(GTEST_BIN)
 	printf '\n'
 
 execute_catch: $(CATCH_BIN)
-	mapfile -t tests
+	@mapfile -t tests
 	echo "Catch2 execution received $${#tests[@]} tests" >&2
 
 	if [[ "$${#tests[@]}" -eq 0 ]]; then
@@ -139,19 +147,20 @@ execute_catch: $(CATCH_BIN)
 	report="$(CATCH_REPORT_DIR)/pick-$$(date -u +%Y%m%dT%H%M%S).xml"
 
 	"./$(CATCH_BIN)" "$${tests[@]}" -r junit -o "$$report" >&2
+
 	cat "$$report"
 	printf '\n'
 
 audit_gtest: $(GTEST_BIN) check-tools
-	tmp_dir="$$(mktemp -d)"
+	@tmp_dir="$$(mktemp -d)"
 	trap 'rm -rf "$$tmp_dir"' EXIT
 
 	discovery="$$tmp_dir/discovery.xml"
 	input="$$tmp_dir/testAuditorInput.xml"
 	selected="$$tmp_dir/selected-tests.txt"
 
-	$(MAKE) discover_gtest > "$$discovery"
-	$(MAKE) auditor_input DISCOVERY="$$discovery" REPORT_DIR="$(GTEST_REPORT_DIR)" > "$$input"
+	$(MAKE) --no-print-directory discover_gtest > "$$discovery"
+	$(MAKE) --no-print-directory auditor_input DISCOVERY="$$discovery" REPORT_DIR="$(GTEST_REPORT_DIR)" > "$$input"
 
 	"$(AUDITOR_BIN)" < "$$input" > "$$selected"
 
@@ -162,18 +171,18 @@ audit_gtest: $(GTEST_BIN) check-tools
 		echo "(none)" >&2
 	fi
 
-	cat "$$selected" | $(MAKE) execute_gtest
+	cat "$$selected" | $(MAKE) --no-print-directory execute_gtest
 
 audit_catch: $(CATCH_BIN) check-tools
-	tmp_dir="$$(mktemp -d)"
+	@tmp_dir="$$(mktemp -d)"
 	trap 'rm -rf "$$tmp_dir"' EXIT
 
 	discovery="$$tmp_dir/discovery.xml"
 	input="$$tmp_dir/testAuditorInput.xml"
 	selected="$$tmp_dir/selected-tests.txt"
 
-	$(MAKE) discover_catch > "$$discovery"
-	$(MAKE) auditor_input DISCOVERY="$$discovery" REPORT_DIR="$(CATCH_REPORT_DIR)" > "$$input"
+	$(MAKE) --no-print-directory discover_catch > "$$discovery"
+	$(MAKE) --no-print-directory auditor_input DISCOVERY="$$discovery" REPORT_DIR="$(CATCH_REPORT_DIR)" > "$$input"
 
 	"$(AUDITOR_BIN)" < "$$input" > "$$selected"
 
@@ -184,7 +193,7 @@ audit_catch: $(CATCH_BIN) check-tools
 		echo "(none)" >&2
 	fi
 
-	cat "$$selected" | $(MAKE) execute_catch
+	cat "$$selected" | $(MAKE) --no-print-directory execute_catch
 
 # --------------------------------------------------------------------
 # internal helper target
@@ -194,7 +203,7 @@ audit_catch: $(CATCH_BIN) check-tools
 # --------------------------------------------------------------------
 
 auditor_input:
-	if [[ -z "$${DISCOVERY:-}" || -z "$${REPORT_DIR:-}" ]]; then
+	@if [[ -z "$${DISCOVERY:-}" || -z "$${REPORT_DIR:-}" ]]; then
 		echo 'Usage: make auditor_input DISCOVERY=... REPORT_DIR=...' >&2
 		exit 1
 	fi
@@ -224,4 +233,4 @@ auditor_input:
 	echo '</testAuditorInput>'
 
 clean:
-	rm -rf "$(BUILD_DIR)" "$(OUT_DIR)"
+	@rm -rf "$(BUILD_DIR)" "$(OUT_DIR)"

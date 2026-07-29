@@ -23,7 +23,7 @@
         pkgs.gcc
         pkgs.gnumake
         pkgs.gtest
-        pkgs.catch2
+        pkgs.catch2_3
       ];
     };
   };
