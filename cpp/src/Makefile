@@ -81,6 +81,7 @@ discover_catch: $(CATCH_BIN)
 		/^All available/ { next } \
 		/^[0-9]+ test case/ { next } \
 		/^[[:space:]]*$$/ { next } \
+		/^[[:space:]]*\[/ { next } \
 		{ \
 			gsub(/^ +/, "", $$0); \
 			name=$$0; \
@@ -109,12 +110,12 @@ pick_gtest: $(GTEST_BIN)
 	printf '%s\n' $$TESTS | $(MAKE) --no-print-directory execute_gtest
 
 pick_catch: $(CATCH_BIN)
-	@if [[ -z "$${TEST:-}" ]]; then
-		echo 'Usage: make pick_catch TEST="test_name"' >&2
+	@if [[ -z "$${TESTS:-}" ]]; then
+		echo 'Usage: make pick_catch TESTS="test_a test_b"' >&2
 		exit 1
 	fi
 
-	printf '%s\n' "$$TEST" | $(MAKE) --no-print-directory execute_catch
+	printf '%s\n' $$TESTS | $(MAKE) --no-print-directory execute_catch
 
 execute_gtest: $(GTEST_BIN)
 	@mapfile -t tests
@@ -146,7 +147,10 @@ execute_catch: $(CATCH_BIN)
 	mkdir -p "$(CATCH_REPORT_DIR)"
 	report="$(CATCH_REPORT_DIR)/pick-$$(date -u +%Y%m%dT%H%M%S).xml"
 
-	"./$(CATCH_BIN)" "$${tests[@]}" -r junit -o "$$report" >&2
+	spec="$$(printf '"%s",' "$${tests[@]}")"
+	spec="$${spec%,}"
+
+	"./$(CATCH_BIN)" "$$spec" -r junit -o "$$report" >&2
 
 	cat "$$report"
 	printf '\n'
