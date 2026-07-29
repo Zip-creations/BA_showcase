@@ -26,11 +26,11 @@ GTEST_ARCHIVE_DIR = $(GTEST_REPORT_DIR)
 CATCH_ARCHIVE_DIR = $(CATCH_REPORT_DIR)
 
 .PHONY: all clean check-tools
-.PHONY: test_gtest discover_gtest pick_gtest execute_gtest test_all_gtest
-.PHONY: test_catch discover_catch pick_catch execute_catch test_all_catch
+.PHONY: discover_gtest pick_gtest execute_gtest test_all_gtest
+.PHONY: discover_catch pick_catch execute_catch test_all_catch
 .PHONY: auditor_input
 
-all: test_gtest test_catch
+all: test_all_gtest test_all_catch
 
 check-tools:
 	@command -v "$(AUDITOR_BIN)" >/dev/null 2>&1 || {
@@ -45,24 +45,6 @@ $(GTEST_BIN): $(GTEST_SRC) $(TODO_SRC)
 $(CATCH_BIN): $(CATCH_SRC) $(TODO_SRC)
 	@mkdir -p "$(BUILD_DIR)"
 	$(CXX) $(CXXFLAGS) $(CATCH_SRC) $(TODO_SRC) -o "$(CATCH_BIN)" -lCatch2Main -lCatch2
-
-test_gtest: $(GTEST_BIN)
-	@mkdir -p "$(GTEST_REPORT_DIR)"
-	report="$(GTEST_REPORT_DIR)/full-$$(date -u +%Y%m%dT%H%M%S).xml"
-
-	"./$(GTEST_BIN)" --gtest_output=xml:"$$report" >&2
-
-	cat "$$report"
-	printf '\n'
-
-test_catch: $(CATCH_BIN)
-	@mkdir -p "$(CATCH_REPORT_DIR)"
-	report="$(CATCH_REPORT_DIR)/full-$$(date -u +%Y%m%dT%H%M%S).xml"
-
-	"./$(CATCH_BIN)" -r junit -o "$$report" >&2
-
-	cat "$$report"
-	printf '\n'
 
 discover_gtest: $(GTEST_BIN)
 	@echo '<?xml version="1.0" encoding="utf-8"?>'
