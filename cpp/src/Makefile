@@ -6,21 +6,21 @@ CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++23 -Iclasses
 
 AUDITOR_BIN ?= testAuditor
-OUT_DIR = tests/out
+OUT_DIR = test/out
 BUILD_DIR = build
 TODO_SRC = classes/ToDoList.cpp
 
 # gTest
 GTEST_BIN = $(BUILD_DIR)/gtest_tests
-GTEST_SRC = tests/gtest/test_simple.cpp tests/gtest/test_identity.cpp
+GTEST_SRC = test/gtest/test_simple.cpp test/gtest/test_identity.cpp
 GTEST_OUT = $(OUT_DIR)/gtest
-GTEST_REPORT_DIR = $(GTEST_OUT)/reports
+GTEST_REPORT_DIR = $(GTEST_OUT)
 
 # Catch2
 CATCH_BIN = $(BUILD_DIR)/catch_tests
-CATCH_SRC = tests/catch2/test_simple.cpp tests/catch2/test_identity.cpp
+CATCH_SRC = test/catch2/test_simple.cpp test/catch2/test_identity.cpp
 CATCH_OUT = $(OUT_DIR)/catch2
-CATCH_REPORT_DIR = $(CATCH_OUT)/reports
+CATCH_REPORT_DIR = $(CATCH_OUT)
 
 .PHONY: all clean check-tools
 .PHONY: test_gtest discover_gtest pick_gtest execute_gtest audit_gtest
@@ -57,17 +57,17 @@ test_catch: $(CATCH_BIN)
 	printf '\n'
 
 discover_gtest: $(GTEST_BIN)
-	echo '<?xml version="1.0" encoding="utf-8"?>'
-	echo '<testsuite>'
-	"./$(GTEST_BIN)" --gtest_list_tests | awk '\
+	@echo '<?xml version="1.0" encoding="utf-8"?>'
+	@echo '<testsuite>'
+	@"./$(GTEST_BIN)" --gtest_list_tests | awk '\
 		/Running main/ { next } \
-		/\.$$/{ suite=$$0; sub(/\.$$/, "", suite); next } \
+		/\.$$/ { suite=$$0; sub(/\.$$/, "", suite); next } \
 		/^[[:space:]]/ { \
 			gsub(/^ +/, "", $$0); \
 			name=$$0; \
 			printf("    <testcase classname=\"%s\" name=\"%s\" qualifiedName=\"%s.%s\"/>\n", suite, name, suite, name); \
 		}'
-	echo '</testsuite>'
+	@echo '</testsuite>'
 
 discover_catch: $(CATCH_BIN)
 	@echo '<?xml version="1.0" encoding="utf-8"?>'

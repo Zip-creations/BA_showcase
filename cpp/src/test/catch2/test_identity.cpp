@@ -3,7 +3,7 @@
 #include <catch2/catch.hpp>
 #include <stdexcept>
 
-TEST_CASE("Copy", "[identity]") {
+TEST_CASE("test_copy") {
     ToDoList todoList1;
     ToDoList todoList2;
     ToDoList todoList3 = todoList1;

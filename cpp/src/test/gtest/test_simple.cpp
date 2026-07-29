@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
 
-TEST(ToDoListSimpleTest, AddItem) {
+TEST(TestSimple, test_add_item) {
     ToDoList todoList;
 
     ToDoItem item1("Item 1");
@@ -16,7 +16,7 @@ TEST(ToDoListSimpleTest, AddItem) {
     EXPECT_EQ(todoList.getItemByID(1).content, "Item 2");
 }
 
-TEST(ToDoListSimpleTest, RemovingItems) {
+TEST(TestSimple, test_removing_items) {
     ToDoList todoList;
 
     ToDoItem item1("Item 1");
@@ -34,14 +34,14 @@ TEST(ToDoListSimpleTest, RemovingItems) {
     EXPECT_EQ(todoList.getItemByID(1).content, "Item 2");
 }
 
-TEST(ToDoListSimpleTest, DISABLED_Skipping) {
+TEST(TestSimple, test_skipping) {
     ASSERT_TRUE(true);
 }
 
-TEST(ToDoListSimpleTest, Simple) {
+TEST(TestSimple, test_simple) {
     EXPECT_NE(std::string("foo"), std::string("bar"));
 }
 
-TEST(ToDoListSimpleTest, SimpleTwo) {
+TEST(TestSimple, test_simple_two) {
     EXPECT_EQ(1 + 1, 2);
 }

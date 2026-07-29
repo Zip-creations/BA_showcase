@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 
-TEST_CASE("Addition", "[todo]") {
+TEST_CASE("test_add_item") {
     ToDoList todoList;
 
     ToDoItem item1("Item 1");
@@ -18,7 +18,7 @@ TEST_CASE("Addition", "[todo]") {
     REQUIRE(todoList.getItemByID(1).content == "Item 2");
 }
 
-TEST_CASE("Removing items", "[todo]") {
+TEST_CASE("test_removing_items") {
     ToDoList todoList;
 
     ToDoItem item1("Item 1");
@@ -36,14 +36,14 @@ TEST_CASE("Removing items", "[todo]") {
     REQUIRE(todoList.getItemByID(1).content == "Item 2");
 }
 
-TEST_CASE("Skipping", "[todo][.]") {
+TEST_CASE("test_skipping") {
     REQUIRE(true);
 }
 
-TEST_CASE("Simple", "[simple]") {
+TEST_CASE("test_simple") {
     REQUIRE(std::string("foo") != std::string("bar"));
 }
 
-TEST_CASE("Simple two", "[simple]") {
+TEST_CASE("test_simple_two") {
     REQUIRE(1 + 1 == 2);
 }

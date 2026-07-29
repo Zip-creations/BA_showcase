@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(ToDoListIdentityTest, Copy) {
+TEST(TestIdentity, test_copy) {
     ToDoList todoList1;
     ToDoList todoList2;
     ToDoList todoList3 = todoList1;
